@@ -132,13 +132,14 @@ def temp_start(start):
     # Close session
     session.close()
 
+#--------------------------------------------------
 @app.route("/api/v1.0/<start>/<end>")
 def temp_start_end(start, end):
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
     # Create a query to find the minimum, maximum, and average temperatures from the specified start date to the end date
-    start_end_temp = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.max(Measurement.tobs)).\
+    start_end_temp = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
         filter(Measurement.date >= start).\
         filter(Measurement.date <= end).all()
     
