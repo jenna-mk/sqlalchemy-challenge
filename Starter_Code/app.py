@@ -36,10 +36,11 @@ def home_page():
     """List all available api routes."""
     return (
         f"Available Routes for Hawaii Weather Data:<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start>-/api/v1.0/<start>/<end>"
+        f"Precipitation: /api/v1.0/precipitation<br/>"
+        f"Stations: /api/v1.0/stations<br/>"
+        f"Temperatures for the most active stations over the last year: /api/v1.0/tobs<br/>"
+        f"Temperature statistics from start date to most recent date: /api/v1.0/yyyy-mm-dd<br/>"
+        f"Temperature statistics from start date to end date: /api/v1.0/yyyy-mm-dd/yyyy-mm-dd<br/>"
     )
 
 #--------------------------------------------------
@@ -114,4 +115,46 @@ def temp_start(start):
     session = Session(engine)
 
     # Create a query to find the minimum, average, and maximum temperatures for the specified date range
+    start_temp = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+        filter(Measurement.date >= start).all()
     
+    # Create a list for the temperature statistics
+    temp_stats = []
+    for min, max, avg in start_temp:
+        temp_stat_dict = {}
+        temp_stat_dict["Minimum"] = min
+        temp_stat_dict["Maximum"] = max
+        temp_stat_dict["Average"] = avg
+        temp_stats.append(temp_stat_dict)
+
+    return jsonify(temp_stats)
+
+    # Close session
+    session.close()
+
+@app.route("/api/v1.0/<start>/<end>")
+def temp_start_end(start, end):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+
+    # Create a query to find the minimum, maximum, and average temperatures from the specified start date to the end date
+    start_end_temp = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).\
+        filter(Measurement.date <= end).all()
+    
+    # Close the session
+    session.close()
+
+    # Create a list to hold the temperature statistics from the selected date range 
+    start_end_stats =[]
+    for min, max, avg in start_end_temp:
+        start_end_dict = {}
+        start_end_dict["Minimum"] = min
+        start_end_dict["Maximum"] = max
+        start_end_dict["Average"] = avg
+        start_end_stats.append(start_end_dict)
+
+    return jsonify(start_end_stats)
+
+if __name__ == '__main__':
+    app.run(debug=True)        
